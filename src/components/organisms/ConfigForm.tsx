@@ -20,7 +20,10 @@ interface ConfigFormProps {
 export default function ConfigForm({ config, onChange }: ConfigFormProps) {
   const { t, language } = useLanguage();
   const [currentStep, setCurrentStep] = React.useState(0);
-  
+
+  // Estado local de texto para inputs numéricos, para permitir borrar sin forzar 0
+  const [rawValues, setRawValues] = React.useState<Record<string, string>>({});
+
   // Manejador genérico de cambios
   const updateField = (key: keyof AlbumConfig, value: any) => {
     onChange({
@@ -28,6 +31,39 @@ export default function ConfigForm({ config, onChange }: ConfigFormProps) {
       [key]: value,
     });
   };
+
+  // Manejador de inputs numéricos: guarda string en rawValues y parsea al config solo si es válido
+  const handleNumericChange = (
+    key: keyof AlbumConfig,
+    raw: string,
+    parser: (v: string) => number,
+    fallback: number
+  ) => {
+    setRawValues((prev) => ({ ...prev, [key]: raw }));
+    const parsed = parser(raw);
+    if (!isNaN(parsed) && raw.trim() !== "") {
+      updateField(key, parsed);
+    }
+  };
+
+  // Al perder el foco, si el campo está vacío aplica el fallback
+  const handleNumericBlur = (
+    key: keyof AlbumConfig,
+    fallback: number
+  ) => {
+    setRawValues((prev) => {
+      const raw = prev[key];
+      if (raw === undefined || raw.trim() === "" || isNaN(Number(raw))) {
+        updateField(key, fallback);
+        return { ...prev, [key]: String(fallback) };
+      }
+      return prev;
+    });
+  };
+
+  // Devuelve el valor a mostrar: rawValues si existe, sino el valor del config
+  const displayValue = (key: keyof AlbumConfig) =>
+    rawValues[key] !== undefined ? rawValues[key] : String(config[key]);
 
   // Cuando cambia el país, actualizamos también la moneda de forma inteligente por defecto
   const handleCountryChange = (countryName: string) => {
@@ -159,10 +195,12 @@ export default function ConfigForm({ config, onChange }: ConfigFormProps) {
             <FormField label={t("config.albumPrice")} icon="📕">
               <div className="relative flex items-center">
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   min="0"
-                  value={config.albumPrice}
-                  onChange={(e) => updateField("albumPrice", parseFloat(e.target.value) || 0)}
+                  value={displayValue("albumPrice")}
+                  onChange={(e) => handleNumericChange("albumPrice", e.target.value, parseFloat, 0)}
+                  onBlur={() => handleNumericBlur("albumPrice", 0)}
                   id="album-price-input"
                   className="rounded-full px-5 py-3 text-sm pr-20"
                 />
@@ -176,11 +214,11 @@ export default function ConfigForm({ config, onChange }: ConfigFormProps) {
             <FormField label={t("config.packPrice")} icon="✉️">
               <div className="relative flex items-center">
                 <Input
-                  type="number"
-                  min="0.01"
-                  step="any"
-                  value={config.packPrice}
-                  onChange={(e) => updateField("packPrice", parseFloat(e.target.value) || 0)}
+                  type="text"
+                  inputMode="decimal"
+                  value={displayValue("packPrice")}
+                  onChange={(e) => handleNumericChange("packPrice", e.target.value, parseFloat, 0.01)}
+                  onBlur={() => handleNumericBlur("packPrice", 0.01)}
                   id="pack-price-input"
                   className="rounded-full px-5 py-3 text-sm pr-20 focus:ring-brand-blue"
                 />
@@ -199,11 +237,11 @@ export default function ConfigForm({ config, onChange }: ConfigFormProps) {
               {/* Total Stickers */}
               <FormField label={t("config.totalStickers")} icon="🔢">
                 <Input
-                  type="number"
-                  min="10"
-                  max="2000"
-                  value={config.totalStickers}
-                  onChange={(e) => updateField("totalStickers", parseInt(e.target.value) || 0)}
+                  type="text"
+                  inputMode="numeric"
+                  value={displayValue("totalStickers")}
+                  onChange={(e) => handleNumericChange("totalStickers", e.target.value, (v) => parseInt(v, 10), 0)}
+                  onBlur={() => handleNumericBlur("totalStickers", 10)}
                   id="total-stickers-input"
                   className="rounded-xl px-4 py-3 text-xs"
                 />
@@ -212,11 +250,11 @@ export default function ConfigForm({ config, onChange }: ConfigFormProps) {
               {/* Stickers per Pack */}
               <FormField label={t("config.stickersPerPack")} icon="📦">
                 <Input
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={config.stickersPerPack}
-                  onChange={(e) => updateField("stickersPerPack", parseInt(e.target.value) || 1)}
+                  type="text"
+                  inputMode="numeric"
+                  value={displayValue("stickersPerPack")}
+                  onChange={(e) => handleNumericChange("stickersPerPack", e.target.value, (v) => parseInt(v, 10), 1)}
+                  onBlur={() => handleNumericBlur("stickersPerPack", 1)}
                   id="stickers-per-pack-input"
                   className="rounded-xl px-4 py-3 text-xs focus:ring-brand-blue"
                 />
