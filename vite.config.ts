@@ -5,6 +5,8 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // Base path for GitHub Pages — must match the repository name
+    base: '/ss/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
