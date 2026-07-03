@@ -1,0 +1,6 @@
+{
+  "name": "StickerStats",
+  "description": "Simulador interactivo del costo real de completar un álbum de figuritas, basado en la teoría del problema del coleccionista de cupones, con simulación de Monte Carlo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
